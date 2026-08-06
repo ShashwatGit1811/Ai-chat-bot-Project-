@@ -1,7 +1,7 @@
 #  DB functions
 import sqlite3
 from langchain_core.messages import HumanMessage, AIMessage
-from llm_and_chains import eval_chain
+
 
 def get_connection():
     conn = sqlite3.connect("chatdb.db")
@@ -104,7 +104,7 @@ def save_message(session_id,role,prompt):
     conn.close()
 
 
-def load_history(session_id)-> list:
+def load_history()-> list:
     conn=get_connection()
     cursor=conn.cursor()
     
@@ -125,7 +125,12 @@ def load_history(session_id)-> list:
     return messages
 
 
-def evaluate(chat_id,question: str, answer: str,session_id) -> float:
+def evaluate(chat_id, question: str, answer: str, session_id, eval_chain) -> float:
+    """
+    eval_chain is built by the caller via llm_and_chains.get_eval_chain(api_key)
+    and passed in here, so this module never has to import llm_and_chains
+    (which is what caused the circular import with streamlit_app.py).
+    """
     try:
         scores  = eval_chain.invoke({"question": question, "answer": answer})
         overall = round((
