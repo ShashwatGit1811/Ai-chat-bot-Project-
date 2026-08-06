@@ -1,18 +1,10 @@
-
-from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder 
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_groq import ChatGroq
 # from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.output_parsers import StrOutputParser,JsonOutputParser
-from streamlit_app import eval_llm
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 
 # model declaration
-model="llama-3.3-70b-versatile"
-
-# Setup
-llm = ChatGroq(model=model, temperature=0.7, max_retries=3)
-eval_llm = ChatGroq(model=model, temperature=0.7, max_retries=3)
-
-# llm=ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+model = "llama-3.3-70b-versatile"
 
 SYSTEM_PROMPT = """
 You are an expert AI assistant.
@@ -45,12 +37,20 @@ eval_prompt = ChatPromptTemplate.from_messages([
     ("human",  EVAL_HUMAN),
 ])
 
-eval_chain = eval_prompt | eval_llm | JsonOutputParser()
-
 prompt = ChatPromptTemplate.from_messages([
     ("system", SYSTEM_PROMPT),
     MessagesPlaceholder(variable_name="history"),
     ("human",  "{input}"),
 ])
 
-chain  = prompt | llm | StrOutputParser()
+
+def get_chain(api_key):
+    """Build the chat chain using a user-supplied Groq API key."""
+    llm = ChatGroq(model=model, temperature=0.7, max_retries=3, api_key=api_key)
+    return prompt | llm | StrOutputParser()
+
+
+def get_eval_chain(api_key):
+    """Build the evaluation chain using a user-supplied Groq API key."""
+    eval_llm = ChatGroq(model=model, temperature=0.7, max_retries=3, api_key=api_key)
+    return eval_prompt | eval_llm | JsonOutputParser()
