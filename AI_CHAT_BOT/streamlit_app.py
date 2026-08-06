@@ -123,7 +123,7 @@ def stream_chat_response(session_id, prompt):
     generator), then save the exchange, run eval, and store token/score info
     on st.session_state for the caller to use after streaming completes.
     """
-    history = load_history(session_id)
+    history = load_history()
     start = time.time()
     reply = ""
     chain = get_chain(st.session_state.groq_api_key)
