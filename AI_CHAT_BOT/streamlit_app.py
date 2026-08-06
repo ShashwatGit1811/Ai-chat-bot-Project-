@@ -79,6 +79,12 @@ def get_chain():
     )
     return chat_prompt | llm | StrOutputParser()
 
+eval_llm = ChatGroq(
+        model=model,
+        temperature=0.7,
+        max_retries=3,
+        api_key=st.session_state.groq_api_key,
+    )
 
 # =========================================================
 # BACKEND HELPERS (formerly HTTP calls, now direct calls)
