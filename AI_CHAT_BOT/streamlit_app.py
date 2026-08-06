@@ -1,14 +1,14 @@
 """
 Streamlit frontend for the LangChain AI Chat backend.
 
-Runs standalone — no FastAPI layer. Talks directly to LangChain (via the
-`chain` in llm_and_chains.py) and SQLite (via db_opr.py).
+Runs standalone — no FastAPI layer. Talks directly to LangChain (via
+llm_and_chains.py) and SQLite (via db_opr.py).
 
 Run:
     streamlit run streamlit_app.py
 
-Requires a GROQ_API_KEY (and optionally GOOGLE_API_KEY) available as an
-environment variable / Streamlit secret. See llm_and_chains.py.
+The Groq API key is entered by the user in the sidebar at runtime (no
+GROQ_API_KEY env var required). See llm_and_chains.py.
 """
 
 import time
@@ -26,9 +26,7 @@ from db_opr import (
     get_session_history,
     delete_session_history,
 )
-from llm_and_chains import model, prompt as chat_prompt
-from langchain_groq import ChatGroq
-from langchain_core.output_parsers import StrOutputParser
+from llm_and_chains import model, get_chain, get_eval_chain
 
 st.set_page_config(
     page_title="AI Chat Assistant",
@@ -68,23 +66,6 @@ def init_state():
 
 init_state()
 
-
-def get_chain():
-    """Build the chat chain using the user-supplied Groq API key."""
-    llm = ChatGroq(
-        model=model,
-        temperature=0.7,
-        max_retries=3,
-        api_key=st.session_state.groq_api_key,
-    )
-    return chat_prompt | llm | StrOutputParser()
-
-eval_llm = ChatGroq(
-        model=model,
-        temperature=0.7,
-        max_retries=3,
-        api_key=st.session_state.groq_api_key,
-    )
 
 # =========================================================
 # BACKEND HELPERS (formerly HTTP calls, now direct calls)
@@ -145,7 +126,7 @@ def stream_chat_response(session_id, prompt):
     history = load_history(session_id)
     start = time.time()
     reply = ""
-    chain = get_chain()
+    chain = get_chain(st.session_state.groq_api_key)
 
     for chunk in chain.stream({"input": prompt, "history": history}):
         reply += chunk
@@ -165,7 +146,8 @@ def stream_chat_response(session_id, prompt):
     }
 
     chat_id = save_chat(session_id, savechat)
-    overall_score = evaluate(chat_id, prompt, reply, session_id)
+    eval_chain = get_eval_chain(st.session_state.groq_api_key)
+    overall_score = evaluate(chat_id, prompt, reply, session_id, eval_chain)
 
     st.session_state["_last_chat_id"] = chat_id
     st.session_state["_last_score"] = overall_score
